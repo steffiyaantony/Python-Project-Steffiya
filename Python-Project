@@ -2,22 +2,31 @@ import requests as r
 from bs4 import BeautifulSoup
 import pandas as pd
 import random
-genere_list = ['Action', 'Adventure',
-               'Animation', 'Biography',
-               'Comedy', 'Crime',
-               'Documentary', 'Drama',
-               'Family', 'Fantasy',
-               'Film-Noir', 'History',
-               'Horror', 'Music', 'Musical',
-               'Mystery', 'Romance', 'Sci-Fi',
-               'Short', 'Sport', 'Thriller',
-               'War', 'Western']
 
-print(genere_list)
+genere_list = ['action', 'adventure',
+               'animation', 'biography',
+               'comedy', 'crime',
+               'documentary', 'drama',
+               'family', 'fantasy',
+               'film-noir', 'history',
+               'horror', 'music', 'musical',
+               'mystery', 'romance', 'sci-fi',
+               'short', 'sport', 'thriller',
+               'war', 'western']
 
-# genere = input('Please select one genere from the above list.')
-genere = 'action'
+def randomizer(list):
+    return random.choice(list)
 
+while True:
+    print("Please select a genere from the list or quit\n", ','.join(genere_list))
+    genere = input()
+    if genere.lower() in genere_list:
+        break
+    elif genere.lower() == 'quit':
+        print("Good Bye!Have a Nice Day!")
+        exit()
+    else:
+        print("please provide the correct input")
 url = fr'https://www.imdb.com/search/title/?genres={genere}&explore=genres&title_type=feature&ref_=ft_movie_0'
 response = r.get(url)
 
@@ -34,63 +43,57 @@ for one_movie in all_movies:
     except:
         movie_name = ''
     try:
-        year = str(one_movie.find('h3', class_="lister-item-header").find(class_="lister-item-year text-muted unbold").get_text()).strip('(').strip(')')
+        year = str(one_movie.find('h3', class_="lister-item-header").find(
+            class_="lister-item-year text-muted unbold").get_text()).strip('(').strip(')')
         year = int(''.join(filter(str.isdigit, year)))
     except:
         year = ''
     try:
-        PG_rating = str(one_movie.find_all('p').__getitem__(0).find_all('span').__getitem__(0).get_text()).strip(' ').strip('')
+        PG_rating = str(one_movie.find_all('p').__getitem__(0).find_all('span').__getitem__(0).get_text()).strip(
+            ' ').strip('')
     except:
         PG_rating = ''
 
     try:
-        run_time = str(one_movie.find_all('p').__getitem__(0).find_all('span').__getitem__(2).get_text()).strip(' ').strip('')
+        run_time = str(one_movie.find_all('p').__getitem__(0).find_all('span').__getitem__(2).get_text()).strip(
+            ' ').strip('')
     except:
         run_time = ''
 
     try:
-        rating = str(one_movie.find('div', class_="ratings-bar").find_all('div').__getitem__(0).get_text()).strip('\n').strip(' ')
+        rating = str(one_movie.find('div', class_="ratings-bar").find_all('div').__getitem__(0).get_text()).strip(
+            '\n').strip(' ')
     except:
         rating = ''
 
-    temp_dict = {'name': [movie_name], 'year': [year], 'pg_rating': [PG_rating], 'run_time': [run_time], 'rating': [rating]}
+    temp_dict = {'name': [movie_name], 'year': [year], 'pg_rating': [PG_rating], 'run_time': [run_time],
+                 'rating': [rating]}
 
-    #movie_df = movie_df.append(pd.DataFrame(temp_dict), ignore_index=True)
-#print(movie_df)
-#movie_df.to_csv('imdb_movies_list.csv', index=False)
-#To create movie picker bot
-movie_df = pd.read_csv(r'imdb_movies_list.csv')
-movies = movie_df
-def movie_picker(year=None):
-    if year:
-        filtered_movies = [movie for movie in movies if movie['year'] == year]
-    else:
-        filtered_movies = movies
-    
-    if filtered_movies:
-        return random.choice(filtered_movies)['name']
-    else:
-        return None
+    movie_df = movie_df.append(pd.DataFrame(temp_dict), ignore_index=True)
 
 while True:
-    user_input = input("Enter 'pick' to get a movie recommendation, 'year' to filter by year, or 'quit' to exit: ")
-    
-    if user_input.lower() == 'pick':
-        movie = movie_picker()
-        print(f"Recommended Movie: {movie}")
-    elif user_input.lower() == 'year':
-        year_input = input("Enter the release year: ")
-        try:
-            year = int(year_input)
-            movie = movie_picker(year)
-            if movie:
-                print(f"Recommended Movie: {movie}")
-            else:
-                print("No movies available for the given year.")
-        except ValueError:
-            print("Invalid year input.")
-    elif user_input.lower() == 'quit':
-        print("Goodbye!")
+    year = input(f'Please select a year of a movie from list {movie_df["year"].unique()} or for any random movie type "any" \n')
+    if str(year) in list(movie_df["year"].astype(str).unique()):
+        df_year_filter = movie_df[movie_df["year"].astype(str) == str(year)]
+        break
+    elif year.lower() == "any":
+        df_year_filter = movie_df
         break
     else:
-        print("Invalid input. Please try again.")
+        print("Invalid Input provided, please provide the correct inptut")
+
+while True:
+    rating = input(f'Please select the rating or type "any" for random movie pick \n')
+
+    if rating.isdigit():
+        df_rating_filter = df_year_filter[df_year_filter["rating"] >= rating]
+        movie_name = randomizer(list(df_rating_filter["name"].unique()))
+        print(movie_name)
+        break
+    elif rating.lower() == "any":
+        df_rating_filter = df_year_filter
+        movie_name = randomizer(list(df_rating_filter["name"].unique()))
+        print(movie_name)
+        break
+    else:
+        print("Invalid Input provided, please provide the correct input")
